@@ -70,5 +70,11 @@ namespace TenmoClient
             Console.WriteLine("");
             return pass;
         }
+
+        //TODO
+        //GetUserFromListOfUsers(list of users)
+        //  display list of users
+        //  prompt for correct selection
+        //  returns the user
     }
 }

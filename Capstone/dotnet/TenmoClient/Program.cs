@@ -8,6 +8,7 @@ namespace TenmoClient
     {
         private static readonly ConsoleService consoleService = new ConsoleService();
         private static readonly AuthService authService = new AuthService();
+        //initialize accountService
 
         static void Main(string[] args)
         {
@@ -86,23 +87,39 @@ namespace TenmoClient
                 }
                 else if (menuSelection == 1)
                 {
+                    //view current balance
 
+
+                    //get userId from UserService.GetUserId
+                    //get the balance from accountService.GetBalance
+
+                    //display balance
                 }
                 else if (menuSelection == 2)
                 {
-
+                    //view your past transfers
                 }
                 else if (menuSelection == 3)
                 {
-
+                    //view your pending requests
                 }
                 else if (menuSelection == 4)
                 {
+                    //sending TE Bucks
 
+                    //list of users = accountService.ListOfUsers();
+
+                    //GetUserFromListOfUsers(list of users)
+                    //pass the user list to Console Service(listOfUsers)  => This displays the list of users, prompts of a selection, returns the selected user
+
+                    //verifytransferamount(fromUser)
+
+
+                    //send te bucks to specified user
                 }
                 else if (menuSelection == 5)
                 {
-
+                    //log in as different user
                 }
                 else if (menuSelection == 6)
                 {
