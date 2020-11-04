@@ -71,10 +71,57 @@ namespace TenmoClient
             return pass;
         }
 
-        //TODO
-        //GetUserFromListOfUsers(list of users)
-        //  display list of users
-        //  prompt for correct selection
-        //  returns the user
+        public API_User GetValidUserFromList(List<API_User> list)
+        {
+            int choice;
+            int i = 1;
+            while(true)
+            {
+                foreach(API_User user in list)
+                {
+                    Console.WriteLine($"{i}.) {user.Username}");
+                    i++;
+                }
+                if (!int.TryParse(Console.ReadLine(), out int userChoice))
+                {
+                    Console.WriteLine("Please select a valid username.");
+                }
+                else
+                {
+                    if (UserService.GetUserId() == list[userChoice - 1].UserId || userChoice > list.Count || userChoice < 1)
+                    {
+                        Console.WriteLine("Please select a valid username.");
+                    }
+                    else
+                    {
+                        choice = userChoice;
+                        break;
+                    }
+                }
+            }
+            return list[choice - 1];
+        }
+
+        public decimal GetValidTransferAmount(decimal? balance)
+        {
+            decimal transferAmount;
+
+            while (true)
+            {
+                if(!decimal.TryParse(Console.ReadLine(), out decimal userTransferAmount) || userTransferAmount > balance || userTransferAmount < 0)
+                {
+                    Console.WriteLine("Please input a valid transfer amount.");
+                }
+                else
+                {
+                    transferAmount = userTransferAmount;
+                    break;
+                }
+            }
+
+            return transferAmount;
+        }
+
+        //method for error handling
     }
 }

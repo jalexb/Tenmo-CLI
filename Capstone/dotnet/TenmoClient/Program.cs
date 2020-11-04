@@ -8,7 +8,7 @@ namespace TenmoClient
     {
         private static readonly ConsoleService consoleService = new ConsoleService();
         private static readonly AuthService authService = new AuthService();
-        //initialize accountService
+        private static readonly AccountService accountService = new AccountService();
 
         static void Main(string[] args)
         {
@@ -88,12 +88,11 @@ namespace TenmoClient
                 else if (menuSelection == 1)
                 {
                     //view current balance
-
-
-                    //get userId from UserService.GetUserId
-                    //get the balance from accountService.GetBalance
+                    string userToken = UserService.GetToken();
+                    decimal? balance = accountService.GetBalance(userToken);
 
                     //display balance
+                    Console.WriteLine($"Balance: {balance}");
                 }
                 else if (menuSelection == 2)
                 {
@@ -106,16 +105,16 @@ namespace TenmoClient
                 else if (menuSelection == 4)
                 {
                     //sending TE Bucks
-
-                    //list of users = accountService.ListOfUsers();
-
+                    string userToken = UserService.GetToken();
+                    decimal? balance = accountService.GetBalance(userToken);
                     //GetUserFromListOfUsers(list of users)
+                    List<API_User> userList = accountService.GetListOfUsers(userToken);
                     //pass the user list to Console Service(listOfUsers)  => This displays the list of users, prompts of a selection, returns the selected user
-
+                    API_User transferToThisUser = consoleService.GetValidUserFromList(userList);
                     //verifytransferamount(fromUser)
-
-
+                    decimal transferAmount = consoleService.GetValidTransferAmount(balance);
                     //send te bucks to specified user
+                    accountService.MakeTransfer(transferToThisUser, transferAmount);
                 }
                 else if (menuSelection == 5)
                 {
