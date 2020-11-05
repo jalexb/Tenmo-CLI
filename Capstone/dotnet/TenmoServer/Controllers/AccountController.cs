@@ -22,12 +22,12 @@ namespace TenmoServer.Controllers
         }
 
         [HttpGet("balance")]
-        public ActionResult<decimal> currentBalance()
+        public IActionResult currentBalance()
         {
             int? userId = GetCurrentUserId();
             decimal? balance = accountSqlDAO.GetBalance(userId);
 
-            return (balance != null) ? Ok(balance) : StatusCode(500, balance);
+            return Ok(balance);
         }
 
         private int? GetCurrentUserId()
@@ -41,9 +41,8 @@ namespace TenmoServer.Controllers
         [HttpGet("list")]
         public ActionResult<List<ReturnUser>> ListUsers()
         {
-            int? userId = GetCurrentUserId();
             List<ReturnUser> listOfUsers = null;
-            listOfUsers = accountSqlDAO.GetListOfUsers(userId);
+            listOfUsers = accountSqlDAO.GetListOfUsers();
 
             if(listOfUsers == null)
             {
@@ -57,9 +56,9 @@ namespace TenmoServer.Controllers
 
         //send te bucks
         [HttpPost("transfer")]
-        public ActionResult MakeTransfer(int toUserId, decimal transferAmount)
+        public ActionResult MakeTransfer(Transfer transfer)
         {
-            int rowsAffected = accountSqlDAO.MakeTransfer(GetCurrentUserId(), toUserId, transferAmount);
+            int rowsAffected = accountSqlDAO.MakeTransfer(transfer);
 
             if(rowsAffected > 0)
             {
@@ -71,8 +70,22 @@ namespace TenmoServer.Controllers
             }
         }
 
+        [HttpGet("transfer/list")]
+        public ActionResult<List<Transfer>> GetTransferList()
+        {
+            List<Transfer> transferList = null;
 
+            transferList = accountSqlDAO.GetTransferList(GetCurrentUserId());
 
+            if(transferList.Count == 0)
+            {
+                return StatusCode(500);
+            }
+            else
+            {
+                return Ok(transferList);
+            }
+        }
 
         //view your past transfers
         //view your pending requests

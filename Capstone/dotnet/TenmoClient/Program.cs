@@ -1,6 +1,9 @@
-﻿using System;
+﻿using RestSharp;
+using System;
 using System.Collections.Generic;
 using TenmoClient.Data;
+using TenmoServer.Models;
+using LoginUser = TenmoClient.Data.LoginUser;
 
 namespace TenmoClient
 {
@@ -87,16 +90,31 @@ namespace TenmoClient
                 }
                 else if (menuSelection == 1)
                 {
+                    string output;
                     //view current balance
-                    string userToken = UserService.GetToken();
-                    decimal? balance = accountService.GetBalance(userToken);
-
+                    IRestResponse<decimal> response = accountService.GetBalance();
+                    if(response.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+                        output = $"Balance: {response.Data:c}";
+                    }
+                    else
+                    {
+                        output = "Unable to reach server.";
+                    }
                     //display balance
-                    Console.WriteLine($"Balance: {balance}");
+                    Console.WriteLine(output);
                 }
                 else if (menuSelection == 2)
                 {
                     //view your past transfers
+                    List<Transfer> transferList = accountService.GetPreviousTransfers();
+                    List<API_User> userList = accountService.GetListOfUsers();
+                    consoleService.PrintPreviousTransfers(transferList, userList);
+                    Transfer selectedTransfer = consoleService.ValidateTransferDetailsChoice(transferList);
+                    if(selectedTransfer != null)
+                    {
+                        consoleService.PrintTransferDetails(selectedTransfer, userList);
+                    }
                 }
                 else if (menuSelection == 3)
                 {
@@ -105,16 +123,38 @@ namespace TenmoClient
                 else if (menuSelection == 4)
                 {
                     //sending TE Bucks
-                    string userToken = UserService.GetToken();
-                    decimal? balance = accountService.GetBalance(userToken);
-                    //GetUserFromListOfUsers(list of users)
-                    List<API_User> userList = accountService.GetListOfUsers(userToken);
-                    //pass the user list to Console Service(listOfUsers)  => This displays the list of users, prompts of a selection, returns the selected user
-                    API_User transferToThisUser = consoleService.GetValidUserFromList(userList);
-                    //verifytransferamount(fromUser)
-                    decimal transferAmount = consoleService.GetValidTransferAmount(balance);
-                    //send te bucks to specified user
-                    accountService.MakeTransfer(transferToThisUser, transferAmount);
+                    IRestResponse<decimal> response = accountService.GetBalance();
+                    if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+
+                        //GetUserFromListOfUsers(list of users)
+                        List<API_User> userList = accountService.GetListOfUsers();
+                        if (userList.Count != 0)
+                        {
+                            //pass the user list to Console Service(listOfUsers)  => This displays the list of users, prompts of a selection, returns the selected user
+                            API_User transferToThisUser = consoleService.GetValidUserFromList(userList);
+
+                            if (transferToThisUser != null)
+                            {
+                                //verifytransferamount(fromUser)
+                                decimal transferAmount = consoleService.GetValidTransferAmount(response.Data);
+                                if (transferAmount != 0)
+                                {
+                                    //send te bucks to specified user
+                                    accountService.MakeTransfer(transferToThisUser, transferAmount);
+                                    Console.WriteLine("Transfer Made!\n\n\n");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Unable to get User List while making a transfer.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Unable to get balance.");
+                    }
                 }
                 else if (menuSelection == 5)
                 {

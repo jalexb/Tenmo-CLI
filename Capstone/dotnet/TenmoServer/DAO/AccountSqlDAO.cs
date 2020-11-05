@@ -18,11 +18,11 @@ namespace TenmoServer.DAO
             ConnectionString = _connectionString;
         }
 
-        public decimal? GetBalance(int? userId)
+        public decimal GetBalance(int? userId)
         {
             //  subquery that SELECT account balance FROM account WHERE (SELECT user id FROM user WHERE userid = @userid )
             //return executescalar
-            decimal? balance = null;
+            decimal balance = 0;
 
             try
             {
@@ -42,7 +42,7 @@ namespace TenmoServer.DAO
             return balance;
         }
 
-        public int MakeTransfer(int? fromUserId, int toUserId, decimal transferAmount)
+        public int MakeTransfer(Transfer transfer)
         {
             using (SqlConnection conn = new SqlConnection(ConnectionString))
             {
@@ -52,19 +52,52 @@ namespace TenmoServer.DAO
                     "transfer_type_id FROM transfer_types WHERE transfer_type_desc = @transferType)," +
                     "(SELECT transfer_status_id FROM transfer_statuses WHERE transfer_status_desc = @transferStatus)," +
                     "@accountFrom, @accountTo, @amount);", conn);
-                cmd.Parameters.AddWithValue("@transferType", "Send");
-                cmd.Parameters.AddWithValue("@transferStatus", "Approved");
-                cmd.Parameters.AddWithValue("@accountFrom", fromUserId);
-                cmd.Parameters.AddWithValue("@accountTo", toUserId);
-                cmd.Parameters.AddWithValue("@amount", transferAmount);
+                cmd.Parameters.AddWithValue("@transferType", transfer.transfer_type);
+                cmd.Parameters.AddWithValue("@transferStatus", transfer.transfer_status);
+                cmd.Parameters.AddWithValue("@accountFrom", transfer.from_account);
+                cmd.Parameters.AddWithValue("@accountTo", transfer.to_account);
+                cmd.Parameters.AddWithValue("@amount", transfer.amount);
                 
                 int rowsAffected = cmd.ExecuteNonQuery();
                 if(rowsAffected > 0)
                 {
-                    UpdateBalances(fromUserId, toUserId, transferAmount);
+                    UpdateBalances(transfer.from_account, transfer.to_account, transfer.amount);
                 }                              
 
                 return rowsAffected;
+            }
+        }
+
+        public List<Transfer> GetTransferList(int? userId)
+        {
+            List<Transfer> transferList = new List<Transfer>();
+
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                conn.Open();
+
+                SqlCommand cmd = new SqlCommand("SELECT  transfer_id, transfer_type_id, transfer_status_id, account_from, account_to, amount " +
+                                                "FROM transfers WHERE account_from = @account_from OR account_to = @account_to", conn);
+                cmd.Parameters.AddWithValue("@account_from", userId);
+                cmd.Parameters.AddWithValue("@account_to", userId);
+
+                SqlDataReader reader = cmd.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    Transfer transfer = new Transfer();
+
+                    transfer.transferId = Convert.ToInt32(reader["transfer_id"]);
+                    transfer.from_account = Convert.ToInt32(reader["account_from"]);
+                    transfer.to_account = Convert.ToInt32(reader["account_to"]);
+                    transfer.amount = Convert.ToInt32(reader["amount"]);
+                    transfer.transfer_type = (Convert.ToInt32(reader["transfer_type_id"]) == 1) ? "Request" : "Send";
+                    transfer.transfer_status = (Convert.ToInt32(reader["transfer_status_id"]) == 1) ? "Pending" :
+                                               (Convert.ToInt32(reader["transfer_status_id"]) == 2) ? "Apporved" : "Rejected";
+
+                    transferList.Add(transfer);
+                }
+                return transferList;
             }
         }
 
@@ -87,15 +120,14 @@ namespace TenmoServer.DAO
             
         }
 
-        public List<ReturnUser> GetListOfUsers(int? userId)
+        public List<ReturnUser> GetListOfUsers()
         {
             List<ReturnUser> listOfUsers = new List<ReturnUser>();
             using (SqlConnection conn = new SqlConnection(ConnectionString))
             {
                 conn.Open();
 
-                SqlCommand cmd = new SqlCommand("SELECT username, user_id FROM users WHERE user_id != @userId;", conn);
-                cmd.Parameters.AddWithValue("@userId", userId);
+                SqlCommand cmd = new SqlCommand("SELECT username, user_id FROM users;", conn);
 
                 SqlDataReader reader = cmd.ExecuteReader();
 

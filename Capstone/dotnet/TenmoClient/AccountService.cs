@@ -15,20 +15,21 @@ namespace TenmoClient
 
 
 
-        public decimal? GetBalance(string userToken)
+        public IRestResponse<decimal> GetBalance()
         {
             //should print the balance in ConsoleService, and check if decimal is null or not
-            client.Authenticator = new JwtAuthenticator(userToken);
+            client.Authenticator = new JwtAuthenticator(UserService.GetToken());
             RestRequest request = new RestRequest(API_BASE_URL + "balance");
-            IRestResponse<decimal?> response = client.Get<decimal?>(request);
-            return response.Data;
+            IRestResponse<decimal> response = client.Get<decimal>(request);
+
+            return response;
             //  response = client get balance
             //  return response.data
         }
 
-        public List<API_User> GetListOfUsers(string userToken)
+        public List<API_User> GetListOfUsers()
         {
-            client.Authenticator = new JwtAuthenticator(userToken);
+            client.Authenticator = new JwtAuthenticator(UserService.GetToken());
             RestRequest request = new RestRequest(API_BASE_URL + "list");
             List<API_User> userList = new List<API_User>();
             IRestResponse<List<ReturnUser>> response = client.Get<List<ReturnUser>>(request);
@@ -48,10 +49,26 @@ namespace TenmoClient
 
         public void MakeTransfer(API_User toUser, decimal transferAmount)
         {
+            Transfer transfer = new Transfer();
+            transfer.transfer_type = "Send";
+            transfer.transfer_status = "Approved";
+            transfer.to_account = toUser.UserId;
+            transfer.from_account = UserService.GetUserId();
+            transfer.amount = transferAmount;
+
+            //client.Authenticator = new JwtAuthenticator(UserService.GetToken());
             IRestRequest request = new RestRequest(API_BASE_URL + "transfer");
-            request.AddJsonBody(toUser.UserId);
-            request.AddJsonBody(transferAmount);
+            request.AddJsonBody(transfer);
             IRestResponse response = client.Post(request);
+        }
+
+        public List<Transfer> GetPreviousTransfers()
+        {
+            client.Authenticator = new JwtAuthenticator(UserService.GetToken());
+            IRestRequest request = new RestRequest(API_BASE_URL + "transfer/list");
+            IRestResponse<List<Transfer>> response = client.Get<List<Transfer>>(request);
+
+            return response.Data;
         }
     }
 }
