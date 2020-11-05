@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using TenmoClient.Data;
-using TenmoServer.Models;
-using LoginUser = TenmoClient.Data.LoginUser;
 
 namespace TenmoClient
 {
@@ -73,20 +71,20 @@ namespace TenmoClient
             return pass;
         }
 
-        public API_User GetValidUserFromList(List<API_User> list)
+        public ReturnUser GetValidUserFromList(List<ReturnUser> list)
         {
             int choice;
-            Dictionary<int, API_User> userIdAndObject = new Dictionary<int, API_User>();
+            Dictionary<int, ReturnUser> userIdAndObject = new Dictionary<int, ReturnUser>();
             while (true)
             {
                 Console.WriteLine($"-------------------------------------------\nUsers\n{"ID":0,7}Name\n-------------------------------------------\n");
-                foreach(API_User user in list)
+                foreach(ReturnUser user in list)
                 {
                     if(user.UserId == UserService.GetUserId())
                     {
                         continue;
                     }
-                    Console.WriteLine($"{"user.UserId", -7}{user.Username}");
+                    Console.WriteLine($"{user.UserId, -7}{user.Username}");
                     userIdAndObject[user.UserId] = user;
                 }
 
@@ -125,18 +123,17 @@ namespace TenmoClient
             while (true)
             {
                 Console.WriteLine("Please enter a transfer amount (0 to cancel):\n");
-                if(!decimal.TryParse(Console.ReadLine(), out decimal userTransferAmount) || userTransferAmount > balance || userTransferAmount < 1)
+                if(!decimal.TryParse(Console.ReadLine(), out decimal userTransferAmount) || userTransferAmount > balance || userTransferAmount < 0)
                 {
-                    if(userTransferAmount == 0)
-                    {
-                        Console.WriteLine("Exiting...");
-                        Console.Clear();
-                        return 0;
-                    }
                     Console.WriteLine("*** Not a valid transfer amount. ***\n");
                 }
                 else
                 {
+                    if (userTransferAmount == 0)
+                    {
+                        Console.WriteLine("Exiting...");
+                        return 0;
+                    }
                     transferAmount = userTransferAmount;
                     break;
                 }
@@ -145,11 +142,11 @@ namespace TenmoClient
             return transferAmount;
         }
 
-        public void PrintTransferDetails(Transfer selectedTransfer, List<API_User> list)
+        public void PrintTransferDetails(Transfer selectedTransfer, List<ReturnUser> list)
         {
             Dictionary<int, string> userIdAndObject = new Dictionary<int, string>();
 
-            foreach (API_User user in list)
+            foreach (ReturnUser user in list)
             {
                 userIdAndObject[user.UserId] = user.Username;
             }
@@ -160,12 +157,12 @@ namespace TenmoClient
                               + "Transfer Details\n" +
                               "--------------------------------------------");
 
-            Console.WriteLine($"{"Id", -7}{selectedTransfer.transferId}\n" +
-                                $"{"From", -7}{from_user}\n" +
-                                $"{"To", -7}{to_user}\n" +
-                                $"{"Type", -7}{selectedTransfer.transfer_type}\n" +
-                                $"{"Status", -7}{selectedTransfer.transfer_status}\n" +
-                                $"{"Amount", -7}{selectedTransfer.amount:c}\n");
+            Console.WriteLine($"{"Id:", -10}{selectedTransfer.transferId}\n" +
+                                $"{"From:", -10}{from_user}\n" +
+                                $"{"To:", -10}{to_user}\n" +
+                                $"{"Type:", -10}{selectedTransfer.transfer_type}\n" +
+                                $"{"Status:", -10}{selectedTransfer.transfer_status}\n" +
+                                $"{"Amount:", -10}{selectedTransfer.amount:c}\n");
         }
 
         public Transfer ValidateTransferDetailsChoice(List<Transfer> transferList)
@@ -194,17 +191,17 @@ namespace TenmoClient
             }
         }
 
-        public void PrintPreviousTransfers(List<Transfer> transferList, List<API_User> userList)
+        public void PrintPreviousTransfers(List<Transfer> transferList, List<ReturnUser> userList)
         {
             Dictionary<int, string> userIdAndUsername = new Dictionary<int, string>();
-            foreach(API_User user in userList)
+            foreach(ReturnUser user in userList)
             {
                 userIdAndUsername[user.UserId] = user.Username;
             }
 
             if(transferList != null)
             {
-                Console.WriteLine($"-------------------------------------------\nTransfers\n{"ID", -5}{"From/To", -10}{"Amount":c}\n-------------------------------------------\n");
+                Console.WriteLine($"-------------------------------------------\nTransfers\n{"ID", -7}{"From/To", -17}{"Amount":c}\n-------------------------------------------\n");
 
                 int id;
                 string username;
@@ -224,7 +221,7 @@ namespace TenmoClient
                     id = transfer.transferId;
                     amount = transfer.amount;
 
-                    Console.WriteLine($"{id, -5}{username, -10}{amount:c}");
+                    Console.WriteLine($"{id, -7}{username, -17}{amount:c}");
                 }
 
                 Console.WriteLine("---------");

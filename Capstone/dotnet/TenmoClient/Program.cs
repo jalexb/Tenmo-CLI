@@ -2,8 +2,6 @@
 using System;
 using System.Collections.Generic;
 using TenmoClient.Data;
-using TenmoServer.Models;
-using LoginUser = TenmoClient.Data.LoginUser;
 
 namespace TenmoClient
 {
@@ -87,6 +85,7 @@ namespace TenmoClient
                 if (!int.TryParse(Console.ReadLine(), out menuSelection))
                 {
                     Console.WriteLine("Invalid input. Please enter only a number.");
+                    menuSelection = -1;
                 }
                 else if (menuSelection == 1)
                 {
@@ -108,12 +107,30 @@ namespace TenmoClient
                 {
                     //view your past transfers
                     List<Transfer> transferList = accountService.GetPreviousTransfers();
-                    List<API_User> userList = accountService.GetListOfUsers();
-                    consoleService.PrintPreviousTransfers(transferList, userList);
-                    Transfer selectedTransfer = consoleService.ValidateTransferDetailsChoice(transferList);
-                    if(selectedTransfer != null)
+                    if(transferList != null)
                     {
-                        consoleService.PrintTransferDetails(selectedTransfer, userList);
+                        List<ReturnUser> userList = accountService.GetListOfUsers();
+                        if (userList != null)
+                        {
+                            consoleService.PrintPreviousTransfers(transferList, userList);
+                            Transfer selectedTransfer = consoleService.ValidateTransferDetailsChoice(transferList);
+                            if (selectedTransfer != null)
+                            {
+                                consoleService.PrintTransferDetails(selectedTransfer, userList);
+                            }
+                            else
+                            {
+                                Console.WriteLine("Couldn't get transfer details.");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Couldn't retreive User List while getting past transfers.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Couldn't get list of past transfers.");
                     }
                 }
                 else if (menuSelection == 3)
@@ -126,24 +143,28 @@ namespace TenmoClient
                     IRestResponse<decimal> response = accountService.GetBalance();
                     if (response.StatusCode == System.Net.HttpStatusCode.OK)
                     {
-
+                        decimal balance = response.Data;
                         //GetUserFromListOfUsers(list of users)
-                        List<API_User> userList = accountService.GetListOfUsers();
+                        List<ReturnUser> userList = accountService.GetListOfUsers();
                         if (userList.Count != 0)
                         {
                             //pass the user list to Console Service(listOfUsers)  => This displays the list of users, prompts of a selection, returns the selected user
-                            API_User transferToThisUser = consoleService.GetValidUserFromList(userList);
+                            ReturnUser transferToThisUser = consoleService.GetValidUserFromList(userList);
 
                             if (transferToThisUser != null)
                             {
                                 //verifytransferamount(fromUser)
-                                decimal transferAmount = consoleService.GetValidTransferAmount(response.Data);
+                                decimal transferAmount = consoleService.GetValidTransferAmount(balance);
                                 if (transferAmount != 0)
                                 {
                                     //send te bucks to specified user
                                     accountService.MakeTransfer(transferToThisUser, transferAmount);
                                     Console.WriteLine("Transfer Made!\n\n\n");
                                 }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Unable to retreive User from List of Users while making a transfer");
                             }
                         }
                         else
@@ -158,7 +179,8 @@ namespace TenmoClient
                 }
                 else if (menuSelection == 5)
                 {
-                    //log in as different user
+                    //request TE bucks
+                    Console.WriteLine("Optional");
                 }
                 else if (menuSelection == 6)
                 {

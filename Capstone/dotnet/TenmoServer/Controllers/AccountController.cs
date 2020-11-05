@@ -39,14 +39,14 @@ namespace TenmoServer.Controllers
         }
 
         [HttpGet("list")]
-        public ActionResult<List<ReturnUser>> ListUsers()
+        public IActionResult ListUsers()
         {
             List<ReturnUser> listOfUsers = null;
             listOfUsers = accountSqlDAO.GetListOfUsers();
 
             if(listOfUsers == null)
             {
-                return StatusCode(500, listOfUsers);
+                return StatusCode(500);
             }
             else
             {

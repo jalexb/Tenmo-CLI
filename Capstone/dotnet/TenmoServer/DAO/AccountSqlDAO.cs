@@ -42,6 +42,28 @@ namespace TenmoServer.DAO
             return balance;
         }
 
+        public int UpdateRequest(Transfer transfer)
+        {
+            int rowsAffected = 0;
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                conn.Open();
+
+                SqlCommand cmd = new SqlCommand("UPDATE transfers SET transfer_status_id = (SELECT transfer_status_id FROM transfer_statuses " +
+                                                "WHERE transfer_status_desc = @transferStatus) WHERE transfer_id = @transferId;)", conn);
+                cmd.Parameters.AddWithValue("@transferStatus", transfer.transfer_status);
+                cmd.Parameters.AddWithValue("@transferId", transfer.transferId);
+
+                rowsAffected = cmd.ExecuteNonQuery();
+            }
+            if (transfer.transfer_status == "Approved")
+            {
+                UpdateBalances(transfer.from_account, transfer.to_account, transfer.amount);
+            }
+
+            return rowsAffected;
+        }
+
         public int MakeTransfer(Transfer transfer)
         {
             using (SqlConnection conn = new SqlConnection(ConnectionString))
@@ -59,7 +81,7 @@ namespace TenmoServer.DAO
                 cmd.Parameters.AddWithValue("@amount", transfer.amount);
                 
                 int rowsAffected = cmd.ExecuteNonQuery();
-                if(rowsAffected > 0)
+                if(transfer.transfer_status == "Approved")
                 {
                     UpdateBalances(transfer.from_account, transfer.to_account, transfer.amount);
                 }                              
@@ -93,7 +115,7 @@ namespace TenmoServer.DAO
                     transfer.amount = Convert.ToInt32(reader["amount"]);
                     transfer.transfer_type = (Convert.ToInt32(reader["transfer_type_id"]) == 1) ? "Request" : "Send";
                     transfer.transfer_status = (Convert.ToInt32(reader["transfer_status_id"]) == 1) ? "Pending" :
-                                               (Convert.ToInt32(reader["transfer_status_id"]) == 2) ? "Apporved" : "Rejected";
+                                               (Convert.ToInt32(reader["transfer_status_id"]) == 2) ? "Approved" : "Rejected";
 
                     transferList.Add(transfer);
                 }

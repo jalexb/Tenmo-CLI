@@ -3,7 +3,6 @@ using RestSharp.Authenticators;
 using System;
 using System.Collections.Generic;
 using TenmoClient.Data;
-using TenmoServer.Models;
 
 namespace TenmoClient
 {
@@ -27,27 +26,23 @@ namespace TenmoClient
             //  return response.data
         }
 
-        public List<API_User> GetListOfUsers()
+        public List<ReturnUser> GetListOfUsers()
         {
             client.Authenticator = new JwtAuthenticator(UserService.GetToken());
             RestRequest request = new RestRequest(API_BASE_URL + "list");
-            List<API_User> userList = new List<API_User>();
             IRestResponse<List<ReturnUser>> response = client.Get<List<ReturnUser>>(request);
             
-            foreach(ReturnUser user in response.Data)
+            if(response.StatusCode != System.Net.HttpStatusCode.OK)
             {
-                API_User apiUser = new API_User();
-                apiUser.UserId = user.UserId;
-                apiUser.Username = user.Username;
-
-                userList.Add(apiUser);
+                return null;
             }
-            return userList;
+
+            return response.Data;
         }
         //  response = client get users
         //  return response.data
 
-        public void MakeTransfer(API_User toUser, decimal transferAmount)
+        public void MakeTransfer(ReturnUser toUser, decimal transferAmount)
         {
             Transfer transfer = new Transfer();
             transfer.transfer_type = "Send";
@@ -67,7 +62,10 @@ namespace TenmoClient
             client.Authenticator = new JwtAuthenticator(UserService.GetToken());
             IRestRequest request = new RestRequest(API_BASE_URL + "transfer/list");
             IRestResponse<List<Transfer>> response = client.Get<List<Transfer>>(request);
-
+            if(response.StatusCode != System.Net.HttpStatusCode.OK)
+            {
+                return null;
+            }
             return response.Data;
         }
     }
