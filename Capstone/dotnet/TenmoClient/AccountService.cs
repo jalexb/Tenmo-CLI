@@ -16,14 +16,11 @@ namespace TenmoClient
 
         public IRestResponse<decimal> GetBalance()
         {
-            //should print the balance in ConsoleService, and check if decimal is null or not
             client.Authenticator = new JwtAuthenticator(UserService.GetToken());
             RestRequest request = new RestRequest(API_BASE_URL + "balance");
             IRestResponse<decimal> response = client.Get<decimal>(request);
 
             return response;
-            //  response = client get balance
-            //  return response.data
         }
 
         public List<ReturnUser> GetListOfUsers()
@@ -34,6 +31,7 @@ namespace TenmoClient
             
             if(response.StatusCode != System.Net.HttpStatusCode.OK)
             {
+                Console.WriteLine("Failed to get user list: " + response.StatusCode);
                 return null;
             }
 
@@ -42,21 +40,23 @@ namespace TenmoClient
         //  response = client get users
         //  return response.data
 
-        public void MakeTransfer(ReturnUser toUser, decimal transferAmount)
+        public void MakeTransfer(Transfer transfer)
         {
-            Transfer transfer = new Transfer();
-            transfer.transfer_type = "Send";
-            transfer.transfer_status = "Approved";
-            transfer.to_account = toUser.UserId;
-            transfer.from_account = UserService.GetUserId();
-            transfer.amount = transferAmount;
-
             //client.Authenticator = new JwtAuthenticator(UserService.GetToken());
             IRestRequest request = new RestRequest(API_BASE_URL + "transfer");
             request.AddJsonBody(transfer);
-            IRestResponse response = client.Post(request);
-        }
+            IRestResponse<Transfer> response = client.Post<Transfer>(request);
 
+            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                Console.WriteLine($"{response.Data.transfer_type} has successfully been made");
+            }
+            else
+            {
+                Console.WriteLine("Server couldn't be accessed\n\n");
+            }
+        }
+                
         public List<Transfer> GetPreviousTransfers()
         {
             client.Authenticator = new JwtAuthenticator(UserService.GetToken());
@@ -64,9 +64,30 @@ namespace TenmoClient
             IRestResponse<List<Transfer>> response = client.Get<List<Transfer>>(request);
             if(response.StatusCode != System.Net.HttpStatusCode.OK)
             {
+                Console.WriteLine("Server couldn't be accessed");
                 return null;
             }
             return response.Data;
+        }
+
+        public void UpdateTransfer(Transfer selectedTransfer, bool approved)
+        {
+            string transferStatus = approved ? "Approved" : "Rejected";
+
+            selectedTransfer.transfer_status = transferStatus;
+
+            IRestRequest request = new RestRequest(API_BASE_URL + "transfer/update");
+            request.AddJsonBody(selectedTransfer);
+            IRestResponse<Transfer> response = client.Put<Transfer>(request);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                Console.WriteLine($"The transfer request has successfully been {response.Data.transfer_status}\n\n");
+            }
+            else
+            {
+                Console.WriteLine($"{response.StatusCode} while updating your transfer");
+            }
         }
     }
 }

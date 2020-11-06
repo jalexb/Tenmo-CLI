@@ -71,8 +71,9 @@ namespace TenmoClient
             return pass;
         }
 
-        public ReturnUser GetValidUserFromList(List<ReturnUser> list)
+        public ReturnUser GetValidUserFromList(List<ReturnUser> list, bool sending)
         {
+            string transferType = (sending) ? "sending to" : "requesting from";
             int choice;
             Dictionary<int, ReturnUser> userIdAndObject = new Dictionary<int, ReturnUser>();
             while (true)
@@ -90,7 +91,7 @@ namespace TenmoClient
 
                 Console.WriteLine("-------------------------------------------");
 
-                Console.WriteLine("Select ID of user you are transferring to (0 to cancel):");
+                Console.WriteLine("Select ID of user you are " + transferType + " (0 to cancel):");
                 if (int.TryParse(Console.ReadLine(), out int userChoice))
                 {
                     if (userIdAndObject.ContainsKey(userChoice) || userChoice == 0)
@@ -116,7 +117,20 @@ namespace TenmoClient
             return userIdAndObject[choice];
         }
 
-        public decimal GetValidTransferAmount(decimal? balance)
+        public Transfer PopulateTransfer(string transfer_type, string transfer_status, int to_account, int from_account, decimal amount)
+        {
+            Transfer transfer = new Transfer();
+
+            transfer.transfer_type = transfer_type;
+            transfer.transfer_status = transfer_status;
+            transfer.to_account = to_account;
+            transfer.from_account = from_account;
+            transfer.amount = amount;
+
+            return transfer;
+        }
+
+        public decimal GetValidTransferAmount(decimal? balance = 99999)
         {
             decimal transferAmount;
 
@@ -165,18 +179,30 @@ namespace TenmoClient
                                 $"{"Amount:", -10}{selectedTransfer.amount:c}\n");
         }
 
-        public Transfer ValidateTransferDetailsChoice(List<Transfer> transferList)
+        public Transfer ValidateTransferDetailsChoice(List<Transfer> transferList, bool request)
         {
             Dictionary<int, Transfer> transferIdAndObject = new Dictionary<int, Transfer>();
 
+            string transferStatus = request ? "approve/reject" : "view details";
+
             foreach(Transfer transfer in transferList)
             {
-                transferIdAndObject[transfer.transferId] = transfer;
+                if (request)
+                {
+                    if(transfer.transfer_status == "Pending" && UserService.GetUserId() != transfer.to_account)
+                    {
+                        transferIdAndObject[transfer.transferId] = transfer;
+                    }
+                }
+                else
+                {
+                    transferIdAndObject[transfer.transferId] = transfer;
+                }
             }
 
             while (true)
             {
-                Console.WriteLine("Please enter transfer ID to view details (0 to cancel): ");
+                Console.WriteLine("Please enter transfer ID to " + transferStatus + " (0 to cancel): ");
                 if(int.TryParse(Console.ReadLine(), out int transferId))
                 {
                     if (transferId == 0)
@@ -187,12 +213,47 @@ namespace TenmoClient
                     {
                         return transferIdAndObject[transferId];
                     }
+
+                    Console.WriteLine("*** Not a valid option ***");
                 }
             }
         }
 
-        public void PrintPreviousTransfers(List<Transfer> transferList, List<ReturnUser> userList)
+        public int ValidateApproveOrReject(decimal transferAmount, decimal balance)
         {
+            int choice = 0;
+
+            bool cantApprove = transferAmount > balance ? true : false;
+
+            while (true)
+            {
+                Console.WriteLine("1: Approve\n" +
+                                    "2: Reject\n" +
+                                    "0: Don't approve or reject\n" +
+                                    "----------\n" +
+                                    "Please choose an option:");
+                if (int.TryParse(Console.ReadLine(), out int result) && (result == 0 || result == 1 || result == 2))
+                {
+                    if (result == 0)
+                    {
+                        break;
+                    }
+                    if (result == 1 && cantApprove)
+                    {
+                        Console.WriteLine("Request is more than your current balance, can't approve.");
+                        continue;
+                    }
+                    choice = result;
+                    break;
+                }
+            }
+
+            return choice;
+        }
+
+        public void PrintPreviousTransfers(List<Transfer> transferList, List<ReturnUser> userList, bool pending)
+        {
+            string transferStatus = pending ? "Pending" : "Approved";
             Dictionary<int, string> userIdAndUsername = new Dictionary<int, string>();
             foreach(ReturnUser user in userList)
             {
@@ -209,19 +270,26 @@ namespace TenmoClient
 
                 foreach (Transfer transfer in transferList)
                 {
-                    if(transfer.transfer_type != "Requested")
+                    if (transfer.transfer_status == transferStatus)
                     {
-                        username = "From: " + userIdAndUsername[transfer.from_account];
-                    }
-                    else
-                    {
-                        username = "To: " + userIdAndUsername[transfer.to_account];
-                    }
+                        if (transfer.transfer_status == "Pending" && UserService.GetUserId() == transfer.to_account)
+                        {
+                            username = "From: " + userIdAndUsername[transfer.from_account];
+                        }
+                        else if (UserService.GetUserId() == transfer.to_account && transfer.transfer_status == "Approved")
+                        {
+                            username = "From: " + userIdAndUsername[transfer.from_account];
+                        }
+                        else
+                        {
+                            username = "To: " + userIdAndUsername[transfer.to_account];
+                        }
 
-                    id = transfer.transferId;
-                    amount = transfer.amount;
+                        id = transfer.transferId;
+                        amount = transfer.amount;
 
-                    Console.WriteLine($"{id, -7}{username, -17}{amount:c}");
+                        Console.WriteLine($"{id,-7}{username,-17}{amount:c}");
+                    }
                 }
 
                 Console.WriteLine("---------");
@@ -230,6 +298,7 @@ namespace TenmoClient
                 //print the transfer amount
             }
         }
+      
 
         //method for error handling
     }

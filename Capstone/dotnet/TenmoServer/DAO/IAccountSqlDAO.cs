@@ -12,6 +12,6 @@ namespace TenmoServer.DAO
         int MakeTransfer(Transfer transfer);
         List<ReturnUser> GetListOfUsers();
         List<Transfer> GetTransferList(int? userId);
-
+        int UpdateRequest(Transfer transfer);
     }
 }

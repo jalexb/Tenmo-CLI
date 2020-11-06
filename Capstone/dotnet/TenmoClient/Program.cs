@@ -90,7 +90,6 @@ namespace TenmoClient
                 else if (menuSelection == 1)
                 {
                     string output;
-                    //view current balance
                     IRestResponse<decimal> response = accountService.GetBalance();
                     if(response.StatusCode == System.Net.HttpStatusCode.OK)
                     {
@@ -100,7 +99,6 @@ namespace TenmoClient
                     {
                         output = "Unable to reach server.";
                     }
-                    //display balance
                     Console.WriteLine(output);
                 }
                 else if (menuSelection == 2)
@@ -112,8 +110,9 @@ namespace TenmoClient
                         List<ReturnUser> userList = accountService.GetListOfUsers();
                         if (userList != null)
                         {
-                            consoleService.PrintPreviousTransfers(transferList, userList);
-                            Transfer selectedTransfer = consoleService.ValidateTransferDetailsChoice(transferList);
+                            bool pending = false;
+                            consoleService.PrintPreviousTransfers(transferList, userList, pending);
+                            Transfer selectedTransfer = consoleService.ValidateTransferDetailsChoice(transferList, pending);
                             if (selectedTransfer != null)
                             {
                                 consoleService.PrintTransferDetails(selectedTransfer, userList);
@@ -136,6 +135,47 @@ namespace TenmoClient
                 else if (menuSelection == 3)
                 {
                     //view your pending requests
+                    List<Transfer> transferList = accountService.GetPreviousTransfers();
+                    if (transferList != null)
+                    {
+                        List<ReturnUser> userList = accountService.GetListOfUsers();
+                        if (userList != null)
+                        {
+                            bool pending = true;
+                            consoleService.PrintPreviousTransfers(transferList, userList, pending);
+                            Transfer selectedTransfer = consoleService.ValidateTransferDetailsChoice(transferList, pending);
+                            if (selectedTransfer != null)
+                            {
+                                IRestResponse<decimal> response = accountService.GetBalance();
+                                if (response.StatusCode != System.Net.HttpStatusCode.OK)
+                                {
+                                    Console.WriteLine("Unable to reach server.");
+                                }
+                                decimal balance = response.Data;
+                                int userChoice = consoleService.ValidateApproveOrReject(selectedTransfer.amount, balance);
+
+                                bool approved = userChoice == 1 ? true : false;
+
+                                if (userChoice == 1 || userChoice == 2)
+                                {
+                                    //approve
+                                    accountService.UpdateTransfer(selectedTransfer, approved);
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Couldn't get transfer details.");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Couldn't retreive User List while getting past transfers.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Couldn't get list of past transfers.");
+                    }
                 }
                 else if (menuSelection == 4)
                 {
@@ -149,7 +189,7 @@ namespace TenmoClient
                         if (userList.Count != 0)
                         {
                             //pass the user list to Console Service(listOfUsers)  => This displays the list of users, prompts of a selection, returns the selected user
-                            ReturnUser transferToThisUser = consoleService.GetValidUserFromList(userList);
+                            ReturnUser transferToThisUser = consoleService.GetValidUserFromList(userList, true);
 
                             if (transferToThisUser != null)
                             {
@@ -158,8 +198,8 @@ namespace TenmoClient
                                 if (transferAmount != 0)
                                 {
                                     //send te bucks to specified user
-                                    accountService.MakeTransfer(transferToThisUser, transferAmount);
-                                    Console.WriteLine("Transfer Made!\n\n\n");
+                                    Transfer transfer = consoleService.PopulateTransfer("Send", "Approved", transferToThisUser.UserId, UserService.GetUserId(), transferAmount);
+                                    accountService.MakeTransfer(transfer);
                                 }
                             }
                             else
@@ -180,7 +220,41 @@ namespace TenmoClient
                 else if (menuSelection == 5)
                 {
                     //request TE bucks
-                    Console.WriteLine("Optional");
+                    IRestResponse<decimal> response = accountService.GetBalance();
+                    if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+                        //GetUserFromListOfUsers(list of users)
+                        List<ReturnUser> userList = accountService.GetListOfUsers();
+                        if (userList.Count != 0)
+                        {
+                            //pass the user list to Console Service(listOfUsers)  => This displays the list of users, prompts of a selection, returns the selected user
+                            ReturnUser requestFromThisUser = consoleService.GetValidUserFromList(userList, false);
+
+                            if (requestFromThisUser != null)
+                            {
+                                //verifytransferamount(fromUser)
+                                decimal transferAmount = consoleService.GetValidTransferAmount();
+                                if (transferAmount != 0)
+                                {
+                                    //send te bucks to specified user
+                                    Transfer transfer = consoleService.PopulateTransfer("Request", "Pending", UserService.GetUserId(), requestFromThisUser.UserId, transferAmount);
+                                    accountService.MakeTransfer(transfer);
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Unable to retreive User from List of Users while making a request");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Unable to get User List while making a request.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Unable to get balance.");
+                    }
                 }
                 else if (menuSelection == 6)
                 {

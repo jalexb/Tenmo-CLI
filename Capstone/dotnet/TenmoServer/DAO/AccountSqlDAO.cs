@@ -20,8 +20,6 @@ namespace TenmoServer.DAO
 
         public decimal GetBalance(int? userId)
         {
-            //  subquery that SELECT account balance FROM account WHERE (SELECT user id FROM user WHERE userid = @userid )
-            //return executescalar
             decimal balance = 0;
 
             try
@@ -50,7 +48,7 @@ namespace TenmoServer.DAO
                 conn.Open();
 
                 SqlCommand cmd = new SqlCommand("UPDATE transfers SET transfer_status_id = (SELECT transfer_status_id FROM transfer_statuses " +
-                                                "WHERE transfer_status_desc = @transferStatus) WHERE transfer_id = @transferId;)", conn);
+                                                "WHERE transfer_status_desc = @transferStatus) WHERE transfer_id = @transferId;", conn);
                 cmd.Parameters.AddWithValue("@transferStatus", transfer.transfer_status);
                 cmd.Parameters.AddWithValue("@transferId", transfer.transferId);
 
@@ -60,7 +58,7 @@ namespace TenmoServer.DAO
             {
                 UpdateBalances(transfer.from_account, transfer.to_account, transfer.amount);
             }
-
+            
             return rowsAffected;
         }
 
@@ -112,7 +110,7 @@ namespace TenmoServer.DAO
                     transfer.transferId = Convert.ToInt32(reader["transfer_id"]);
                     transfer.from_account = Convert.ToInt32(reader["account_from"]);
                     transfer.to_account = Convert.ToInt32(reader["account_to"]);
-                    transfer.amount = Convert.ToInt32(reader["amount"]);
+                    transfer.amount = Convert.ToDecimal(reader["amount"]);
                     transfer.transfer_type = (Convert.ToInt32(reader["transfer_type_id"]) == 1) ? "Request" : "Send";
                     transfer.transfer_status = (Convert.ToInt32(reader["transfer_status_id"]) == 1) ? "Pending" :
                                                (Convert.ToInt32(reader["transfer_status_id"]) == 2) ? "Approved" : "Rejected";

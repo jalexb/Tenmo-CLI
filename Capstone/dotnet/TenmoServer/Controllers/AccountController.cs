@@ -56,13 +56,13 @@ namespace TenmoServer.Controllers
 
         //send te bucks
         [HttpPost("transfer")]
-        public ActionResult MakeTransfer(Transfer transfer)
+        public IActionResult MakeTransfer(Transfer transfer)
         {
             int rowsAffected = accountSqlDAO.MakeTransfer(transfer);
 
             if(rowsAffected > 0)
             {
-                return Ok();
+                return Ok(transfer);
             }
             else
             {
@@ -84,6 +84,21 @@ namespace TenmoServer.Controllers
             else
             {
                 return Ok(transferList);
+            }
+        }
+
+        [HttpPut("transfer/update")]
+        public IActionResult UpdateTransfer(Transfer transfer)
+        {
+            int rowCount = accountSqlDAO.UpdateRequest(transfer);
+
+            if (rowCount > 0)
+            {
+                return Ok(transfer);
+            }
+            else
+            {
+                return StatusCode(500);
             }
         }
 
