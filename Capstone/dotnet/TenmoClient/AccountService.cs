@@ -42,6 +42,7 @@ namespace TenmoClient
 
         public void MakeTransfer(Transfer transfer)
         {
+
             //client.Authenticator = new JwtAuthenticator(UserService.GetToken());
             IRestRequest request = new RestRequest(API_BASE_URL + "transfer");
             request.AddJsonBody(transfer);

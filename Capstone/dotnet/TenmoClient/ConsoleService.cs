@@ -276,7 +276,7 @@ namespace TenmoClient
                         {
                             username = "From: " + userIdAndUsername[transfer.from_account];
                         }
-                        else if (UserService.GetUserId() == transfer.to_account && transfer.transfer_status == "Approved")
+                        else if (UserService.GetUserId() == transfer.to_account)
                         {
                             username = "From: " + userIdAndUsername[transfer.from_account];
                         }

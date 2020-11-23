@@ -90,6 +90,8 @@ namespace TenmoServer.Controllers
         [HttpPut("transfer/update")]
         public IActionResult UpdateTransfer(Transfer transfer)
         {
+            //validate transfer.amount here
+
             int rowCount = accountSqlDAO.UpdateRequest(transfer);
 
             if (rowCount > 0)

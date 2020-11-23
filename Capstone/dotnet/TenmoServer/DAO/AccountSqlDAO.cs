@@ -54,7 +54,8 @@ namespace TenmoServer.DAO
 
                 rowsAffected = cmd.ExecuteNonQuery();
             }
-            if (transfer.transfer_status == "Approved")
+            //pass this into a method in accountcontroller
+            if (transfer.transfer_status == "Approved")// && userId == transfer.from_user;
             {
                 UpdateBalances(transfer.from_account, transfer.to_account, transfer.amount);
             }
@@ -79,7 +80,7 @@ namespace TenmoServer.DAO
                 cmd.Parameters.AddWithValue("@amount", transfer.amount);
                 
                 int rowsAffected = cmd.ExecuteNonQuery();
-                if(transfer.transfer_status == "Approved")
+                if(transfer.transfer_status == "Approved" )//&& userId = transfer.from_account) 
                 {
                     UpdateBalances(transfer.from_account, transfer.to_account, transfer.amount);
                 }                              
@@ -121,19 +122,31 @@ namespace TenmoServer.DAO
             }
         }
 
-        public void UpdateBalances(int? senderId, int receiverId, decimal transferAmount)
+        public void UpdateBalances(int senderId, int receiverId, decimal transferAmount)
         {
+
+
             using (SqlConnection conn = new SqlConnection(ConnectionString))
             {
                 conn.Open();
 
+
+                //verify transfer amount with currUser Balance
+                //verify that the from_user is currUser
+
+                //transaction
+                //executeNonQuery
                 SqlCommand cmd = new SqlCommand("UPDATE accounts SET balance = balance - @transferAmount WHERE user_id = @senderId;" +
                                                 "UPDATE accounts SET balance = balance + @transferAmount WHERE user_id = @receiverId;", conn);
+                //commit
+                //executeNonQuery
 
                 cmd.Parameters.AddWithValue("@senderId", senderId);
                 cmd.Parameters.AddWithValue("@receiverId", receiverId);
                 cmd.Parameters.AddWithValue("@transferAmount", transferAmount);
                 
+
+
                 cmd.ExecuteNonQuery();
             }
 

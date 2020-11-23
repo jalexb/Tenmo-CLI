@@ -107,7 +107,7 @@ namespace TenmoClient
                     List<Transfer> transferList = accountService.GetPreviousTransfers();
                     if(transferList != null)
                     {
-                        List<ReturnUser> userList = accountService.GetListOfUsers();
+                        List<ReturnUser> userList = accountService.GetListOfUsers(); //get username
                         if (userList != null)
                         {
                             bool pending = false;
